@@ -69,6 +69,25 @@
       background: #f6f8fa;
     }
     @media (max-width: 700px) {
+      body {
+        padding: 3vw;
+      }
+      .container {
+        box-shadow: none;
+        padding: 0.5em;
+        margin: 0.5em;
+        max-width: 99vw;
+      }
+      h1, h2 {
+        font-size: 1.3em;
+      }
+      #liveStatus, #classNavigation {
+        min-width: unset;
+        width: 98vw;
+        font-size: 1em;
+        padding: 0.7em 0.5em;
+        box-shadow: none;
+      }
       table, thead, tbody, th, td, tr {
         display: block;
       }
@@ -82,6 +101,7 @@
         padding-left: 48%;
         text-align: left;
         min-height: 48px;
+        font-size: 1em;
       }
       td:before {
         content: attr(data-label);
@@ -91,10 +111,25 @@
         font-weight: bold;
         padding-left: 1em;
         color: #4473c5;
+        font-size: 0.97em;
       }
       tr {
         margin-bottom: 1em;
       }
+      table {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        background: transparent;
+      }
+    }
+    /* Accessibility: Bigger tap-targets for any links/buttons in the future */
+    button, a {
+      min-height: 44px;
+      min-width: 44px;
+      font-size: 1.1em;
+      border-radius: 0.6em;
+      margin: 0.25em 0;
     }
   </style>
 </head>
