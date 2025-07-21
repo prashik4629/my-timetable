@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Today's Timetable - Multi Batch</title>
+  <title>Day Navigator Timetable</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
     body {
@@ -19,8 +19,30 @@
       box-shadow: 0 0 20px #c3c8d0;
       padding: 2em;
     }
-    h1, h2 {
+    h1, h2 { text-align: center; }
+    #batchSelector,
+    #daySelector {
       text-align: center;
+      margin: 1em auto;
+    }
+    #batchSelector button,
+    #daySelector button {
+      margin: 0 0.3em;
+      padding: 0.5em 1.1em;
+      border: none;
+      background: #eceef1;
+      color: #304068;
+      font-size: 1em;
+      border-radius: 0.8em;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.2s;
+    }
+    #batchSelector button.active,
+    #daySelector button.active {
+      background: #1e90ff;
+      color: #fff;
+      font-weight: 700;
     }
     #liveStatus {
       background: #1e90ff;
@@ -34,27 +56,6 @@
       text-align: center;
       box-shadow: 0 0 10px #e1e5ee;
       letter-spacing: 0.02em;
-    }
-    #batchSelector {
-      text-align: center;
-      margin: 1em auto 1em auto;
-    }
-    #batchSelector button {
-      margin: 0 0.3em;
-      padding: 0.5em 1.1em;
-      border: none;
-      background: #eceef1;
-      color: #304068;
-      font-size: 1em;
-      border-radius: 0.8em;
-      cursor: pointer;
-      font-family: inherit;
-      transition: background 0.2s;
-    }
-    #batchSelector button.active {
-      background: #1e90ff;
-      color: #fff;
-      font-weight: 700;
     }
     #classNavigation {
       text-align: center;
@@ -126,9 +127,10 @@
 </head>
 <body>
   <div class="container">
-    <h1>Today's Schedule</h1>
+    <h1>Day-wise Timetable</h1>
     <div id="batchSelector"></div>
-    <div id="liveStatus">Checking current class...</div>
+    <div id="daySelector"></div>
+    <div id="liveStatus">Checking class status...</div>
     <div id="classNavigation">
       <div><strong>Previous class:</strong> <span id="prevClass">Loading...</span></div>
       <div><strong>Current class:</strong> <span id="currentClass">Loading...</span></div>
@@ -147,6 +149,7 @@
 
 <script>
 const jsToTableDay = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const allDays = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 
 // Only labs differ. Other subjects and times stay the same.
 const baseDays = [
@@ -216,20 +219,11 @@ const labs = {
 };
 const batches = ["B1", "B2", "B3", "B4"];
 
-function buildTodaysData(batch, dayStr) {
-  const index = baseDays.findIndex(d => d.day === dayStr);
-  if(index === -1) return [];
-  return baseDays[index].slots.map((slot) => {
-    let subj = (slot.subject === "LAB") ? labs[batch][index] : slot.subject;
-    // For B3, Wednesday: no lab, so do not show the slot at all
-    if(dayStr === "Wednesday" && slot.subject === "LAB" && labs[batch][index] === "No lab") return null;
-    if(dayStr === "Friday" && slot.subject === "LAB" && labs[batch][index] === "No lab") return null;
-    return { time: slot.time, subject: subj };
-  }).filter(Boolean);
-}
-
-/* ---------- UI Rendering and Navigation ---------- */
-let currentBatch = 'B1'; // Default
+let currentBatch = 'B1';
+let currentDay = (function(){
+  const today = new Date();
+  return jsToTableDay[today.getDay()];
+})();
 
 function renderBatchSelector() {
   const sel = document.getElementById('batchSelector');
@@ -237,16 +231,28 @@ function renderBatchSelector() {
     `<button type="button" class="${b === currentBatch ? 'active':''}" onclick="changeBatch('${b}')">${b}</button>`
   ).join(' ');
 }
-
-function renderTodaysTable() {
+function renderDaySelector() {
+  const sel = document.getElementById('daySelector');
+  sel.innerHTML = allDays.map(d =>
+    `<button type="button" class="${d === currentDay ? 'active':''}" onclick="changeDay('${d}')">${d}</button>`
+  ).join(' ');
+}
+function buildDayData(batch, dayStr) {
+  const index = baseDays.findIndex(d => d.day === dayStr);
+  if(index === -1) return [];
+  return baseDays[index].slots.map((slot) => {
+    let subj = (slot.subject === "LAB") ? labs[batch][index] : slot.subject;
+    if(dayStr === "Wednesday" && slot.subject === "LAB" && labs[batch][index] === "No lab") return null;
+    if(dayStr === "Friday" && slot.subject === "LAB" && labs[batch][index] === "No lab") return null;
+    return { time: slot.time, subject: subj };
+  }).filter(Boolean);
+}
+function renderDayTable() {
   const tbody = document.querySelector('#todaySchedule tbody');
   tbody.innerHTML = '';
-  const today = new Date();
-  const dayStr = jsToTableDay[today.getDay()];
-  const data = buildTodaysData(currentBatch, dayStr);
-
-  if(dayStr === 'Sunday' || data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="2">No classes today 🎉</td></tr>`;
+  const data = buildDayData(currentBatch, currentDay);
+  if(currentDay === 'Sunday' || data.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="2">No classes for ${currentDay} 🎉</td></tr>`;
     return;
   }
   data.forEach(row => {
@@ -258,7 +264,7 @@ function renderTodaysTable() {
     tbody.appendChild(tr);
   });
 }
-
+// Utility date/time functions
 function to12Hour(timeStr) {
   if (!timeStr || typeof timeStr !== "string" || !timeStr.includes(":")) return timeStr || '—';
   let [hour, minute] = timeStr.split(":").map(Number);
@@ -272,7 +278,6 @@ function to12HourRange(rangeStr) {
   const [start, end] = rangeStr.split("-");
   return `${to12Hour(start)} – ${to12Hour(end)}`;
 }
-
 function isNowInTimeRange(startTime, endTime, nowDate) {
   let [startHour, startMin] = startTime.split(':').map(Number);
   let [endHour, endMin] = endTime.split(':').map(Number);
@@ -289,29 +294,24 @@ function timeStrToMinutes(t) {
 
 function updateClassStatus() {
   let now = new Date();
-  let dayStr = jsToTableDay[now.getDay()];
+  let dayStr = currentDay;
   const liveDiv = document.getElementById('liveStatus');
   const prevSpan = document.getElementById('prevClass');
   const currentSpan = document.getElementById('currentClass');
   const nextSpan = document.getElementById('nextClass');
-
-  let todayClasses = buildTodaysData(currentBatch, dayStr);
-
+  let todayClasses = buildDayData(currentBatch, dayStr);
   if(dayStr === 'Sunday' || todayClasses.length === 0) {
-    liveDiv.textContent = "It's Sunday! Enjoy your day off 😊";
+    liveDiv.textContent = `No classes for ${dayStr}! Enjoy your day off 😊`;
     prevSpan.textContent = "None";
     currentSpan.textContent = "No classes today";
     nextSpan.textContent = "No classes today";
     return;
   }
-
-  // Sort by start time
   todayClasses.sort((a,b) => {
     let aStart = timeStrToMinutes(a.time.split('-')[0]);
     let bStart = timeStrToMinutes(b.time.split('-')[0]);
     return aStart - bStart;
   });
-
   let currentClass = null, prevClass = null, nextClass = null;
   let nowMinutes = now.getHours()*60 + now.getMinutes();
   for(let i=0; i<todayClasses.length; i++) {
@@ -352,18 +352,24 @@ function updateClassStatus() {
   currentSpan.textContent = currentClass ? `${currentClass.subject} (${to12HourRange(currentClass.time)})` : "No class running now";
   nextSpan.textContent = nextClass ? `${nextClass.subject} (${to12HourRange(nextClass.time)})` : "No more classes today";
 }
-
 function renderAll() {
   renderBatchSelector();
-  renderTodaysTable();
+  renderDaySelector();
+  renderDayTable();
   updateClassStatus();
 }
 function changeBatch(b) {
   currentBatch = b;
   renderAll();
 }
-window.changeBatch = changeBatch; // make global for button onclick
+function changeDay(d) {
+  currentDay = d;
+  renderAll();
+}
+window.changeBatch = changeBatch;
+window.changeDay = changeDay;
 
+// Initial render
 renderAll();
 setInterval(updateClassStatus, 30 * 1000);
 </script>
