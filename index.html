@@ -168,10 +168,11 @@
   </div>
 
 <script>
-const jsToTableDay = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-const allDays = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+const jsToTableDay = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const allDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const batches = ["B1", "B2", "B3", "B4"];
 
+// Updated timetable per your requirements
 const baseDays = [
   { day: 'Monday', slots: [
     { time: '11:00-12:00', subject: 'Operating systems' },
@@ -184,8 +185,8 @@ const baseDays = [
     { time: '10:00-11:00', subject: 'Embedded system design' },
     { time: '11:00-13:00', subject: 'LAB' },
     { time: '13:00-14:00', subject: 'Recess' },
-    { time: '14:00-15:00', subject: 'Machine learning' },
-    { time: '15:00-16:00', subject: 'Digital VLSI' },
+    { time: '14:00-15:00', subject: 'Operating System' },
+    { time: '15:00-16:00', subject: 'Digital VLSI' }, // Updated slot
     { time: '16:00-17:00', subject: 'Image processing / Cloud computing' }
   ]},
   { day: 'Wednesday', slots: [
@@ -195,12 +196,11 @@ const baseDays = [
     { time: '13:00-15:00', subject: 'LAB' },
     { time: '16:00-17:00', subject: 'Minor' }
   ]},
-  // Thursday per new instructions
   { day: 'Thursday', slots: [
     { time: '11:00-13:00', subject: 'LAB' },
     { time: '13:00-14:00', subject: 'Recess' },
     { time: '14:00-15:00', subject: 'Digital VLSI' },
-    { time: '15:00-16:00', subject: 'Operating system' },
+    { time: '15:00-16:00', subject: 'Machine learning' }, // Changed this slot
     { time: '16:00-17:00', subject: 'Minor' }
   ]},
   { day: 'Friday', slots: [
@@ -218,6 +218,7 @@ const baseDays = [
   ]}
 ];
 
+// Labs assignments per batch and day
 const labs = {
   B1: {
     Monday: "Operating system lab",
@@ -255,56 +256,71 @@ const labs = {
 
 // Thursday LAB assignment as per instruction
 function getThursdayLab(batch) {
-  if(batch === "B1" || batch === "B2") return "Machine learning lab";
-  if(batch === "B3" || batch === "B4") return "Digital VLSI lab";
+  if (batch === "B1" || batch === "B2") return "Machine learning lab";
+  if (batch === "B3" || batch === "B4") return "Digital VLSI lab";
   return "No lab";
 }
 
-let currentBatch = 'B1';
-let currentDay = (function(){
+let currentBatch = "B1";
+let currentDay = (function () {
   const today = new Date();
   return jsToTableDay[today.getDay()];
 })();
 
 function renderBatchSelector() {
-  const sel = document.getElementById('batchSelector');
-  sel.innerHTML = batches.map(b =>
-    `<button type="button" class="${b === currentBatch ? 'active':''}" onclick="changeBatch('${b}')">${b}</button>`
-  ).join(' ');
+  const sel = document.getElementById("batchSelector");
+  sel.innerHTML = batches
+    .map(
+      (b) =>
+        `<button type="button" class="${
+          b === currentBatch ? "active" : ""
+        }" onclick="changeBatch('${b}')">${b}</button>`
+    )
+    .join(" ");
 }
+
 function renderDaySelector() {
-  const sel = document.getElementById('daySelector');
-  sel.innerHTML = allDays.map(d =>
-    `<button type="button" class="${d === currentDay ? 'active':''}" onclick="changeDay('${d}')">${d}</button>`
-  ).join(' ');
+  const sel = document.getElementById("daySelector");
+  sel.innerHTML = allDays
+    .map(
+      (d) =>
+        `<button type="button" class="${
+          d === currentDay ? "active" : ""
+        }" onclick="changeDay('${d}')">${d}</button>`
+    )
+    .join(" ");
 }
+
 function buildDayData(batch, dayStr) {
-  const base = baseDays.find(d => d.day === dayStr);
+  const base = baseDays.find((d) => d.day === dayStr);
   if (!base) return [];
-  return base.slots.map(slot => {
-    if (slot.subject === "LAB") {
-      let lab = "No lab";
-      if(dayStr === "Thursday") {
-        lab = getThursdayLab(batch);
-      } else {
-        lab = (labs[batch][dayStr] || "No lab");
+  return base.slots
+    .map((slot) => {
+      if (slot.subject === "LAB") {
+        let lab = "No lab";
+        if (dayStr === "Thursday") {
+          lab = getThursdayLab(batch);
+        } else {
+          lab = labs[batch][dayStr] || "No lab";
+        }
+        if (lab === "No lab") return null;
+        return { time: slot.time, subject: lab };
       }
-      if (lab === "No lab") return null;
-      return { time: slot.time, subject: lab };
-    }
-    return { time: slot.time, subject: slot.subject };
-  }).filter(Boolean);
+      return { time: slot.time, subject: slot.subject };
+    })
+    .filter(Boolean);
 }
+
 function renderDayTable() {
-  const tbody = document.querySelector('#todaySchedule tbody');
-  tbody.innerHTML = '';
+  const tbody = document.querySelector("#todaySchedule tbody");
+  tbody.innerHTML = "";
   const data = buildDayData(currentBatch, currentDay);
-  if(currentDay === 'Sunday' || data.length === 0) {
+  if (currentDay === "Sunday" || data.length === 0) {
     tbody.innerHTML = `<tr><td colspan="2">No classes for ${currentDay} 🎉</td></tr>`;
     return;
   }
-  data.forEach(row => {
-    const tr = document.createElement('tr');
+  data.forEach((row) => {
+    const tr = document.createElement("tr");
     tr.innerHTML = `
       <td data-label="Time">${to12HourRange(row.time)}</td>
       <td data-label="Subject">${row.subject}</td>
@@ -312,104 +328,133 @@ function renderDayTable() {
     tbody.appendChild(tr);
   });
 }
-// Utility date/time functions
+
 function to12Hour(timeStr) {
-  if (!timeStr || typeof timeStr !== "string" || !timeStr.includes(":")) return timeStr || '—';
+  if (!timeStr || typeof timeStr !== "string" || !timeStr.includes(":"))
+    return timeStr || "—";
   let [hour, minute] = timeStr.split(":").map(Number);
   const ampm = hour >= 12 ? "PM" : "AM";
   hour = hour % 12;
   if (hour === 0) hour = 12;
   return `${hour}:${minute.toString().padStart(2, "0")} ${ampm}`;
 }
+
 function to12HourRange(rangeStr) {
-  if (!rangeStr || typeof rangeStr !== "string" || !rangeStr.includes("-")) return rangeStr || '—';
+  if (!rangeStr || typeof rangeStr !== "string" || !rangeStr.includes("-"))
+    return rangeStr || "—";
   const [start, end] = rangeStr.split("-");
   return `${to12Hour(start)} – ${to12Hour(end)}`;
 }
+
 function isNowInTimeRange(startTime, endTime, nowDate) {
-  let [startHour, startMin] = startTime.split(':').map(Number);
-  let [endHour, endMin] = endTime.split(':').map(Number);
-  let start = new Date(nowDate);
+  const [startHour, startMin] = startTime.split(":").map(Number);
+  const [endHour, endMin] = endTime.split(":").map(Number);
+  const start = new Date(nowDate);
   start.setHours(startHour, startMin, 0, 0);
-  let end = new Date(nowDate);
+  const end = new Date(nowDate);
   end.setHours(endHour, endMin, 0, 0);
   return nowDate >= start && nowDate < end;
 }
+
 function timeStrToMinutes(t) {
-  let [h, m] = t.split(':').map(Number);
-  return h*60+m;
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + m;
 }
 
 function updateClassStatus() {
-  let now = new Date();
-  let dayStr = currentDay;
-  const liveDiv = document.getElementById('liveStatus');
-  const prevSpan = document.getElementById('prevClass');
-  const currentSpan = document.getElementById('currentClass');
-  const nextSpan = document.getElementById('nextClass');
-  let todayClasses = buildDayData(currentBatch, dayStr);
-  if(dayStr === 'Sunday' || todayClasses.length === 0) {
+  const now = new Date();
+  const dayStr = currentDay;
+  const liveDiv = document.getElementById("liveStatus");
+  const prevSpan = document.getElementById("prevClass");
+  const currentSpan = document.getElementById("currentClass");
+  const nextSpan = document.getElementById("nextClass");
+
+  const todayClasses = buildDayData(currentBatch, dayStr);
+
+  if (dayStr === "Sunday" || todayClasses.length === 0) {
     liveDiv.textContent = `No classes for ${dayStr}! Enjoy your day off 😊`;
     prevSpan.textContent = "None";
     currentSpan.textContent = "No classes today";
     nextSpan.textContent = "No classes today";
     return;
   }
-  todayClasses.sort((a,b) => {
-    let aStart = timeStrToMinutes(a.time.split('-')[0]);
-    let bStart = timeStrToMinutes(b.time.split('-')[0]);
+
+  todayClasses.sort((a, b) => {
+    const aStart = timeStrToMinutes(a.time.split("-")[0]);
+    const bStart = timeStrToMinutes(b.time.split("-")[0]);
     return aStart - bStart;
   });
-  let currentClass = null, prevClass = null, nextClass = null;
-  let nowMinutes = now.getHours()*60 + now.getMinutes();
-  for(let i=0; i<todayClasses.length; i++) {
-    let [start, end] = todayClasses[i].time.split('-');
-    if(isNowInTimeRange(start, end, now)) {
+
+  let currentClass = null,
+    prevClass = null,
+    nextClass = null;
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+  for (let i = 0; i < todayClasses.length; i++) {
+    const [start, end] = todayClasses[i].time.split("-");
+    if (isNowInTimeRange(start, end, now)) {
       currentClass = todayClasses[i];
-      prevClass = i > 0 ? todayClasses[i-1] : null;
-      nextClass = i < todayClasses.length-1 ? todayClasses[i+1] : null;
+      prevClass = i > 0 ? todayClasses[i - 1] : null;
+      nextClass = i < todayClasses.length - 1 ? todayClasses[i + 1] : null;
       break;
     }
   }
-  if(!currentClass) {
-    if(nowMinutes < timeStrToMinutes(todayClasses[0].time.split('-')[0])) {
+
+  if (!currentClass) {
+    if (nowMinutes < timeStrToMinutes(todayClasses[0].time.split("-")[0])) {
       prevClass = null;
       nextClass = todayClasses[0];
     } else {
-      for(let i=0; i<todayClasses.length; i++) {
-        let startMin = timeStrToMinutes(todayClasses[i].time.split('-')[0]);
-        let endMin = timeStrToMinutes(todayClasses[i].time.split('-')[1]);
-        if(nowMinutes < startMin) {
-          prevClass = i > 0 ? todayClasses[i-1] : null;
+      for (let i = 0; i < todayClasses.length; i++) {
+        const startMin = timeStrToMinutes(todayClasses[i].time.split("-")[0]);
+        const endMin = timeStrToMinutes(todayClasses[i].time.split("-")[1]);
+        if (nowMinutes < startMin) {
+          prevClass = i > 0 ? todayClasses[i - 1] : null;
           nextClass = todayClasses[i];
           break;
         }
-        if(i === todayClasses.length-1 && nowMinutes >= endMin) {
+        if (i === todayClasses.length - 1 && nowMinutes >= endMin) {
           prevClass = todayClasses[i];
           nextClass = null;
         }
       }
     }
   }
-  if(currentClass) {
-    liveDiv.innerHTML = `Current class: <strong>${currentClass.subject}</strong><br>(${to12HourRange(currentClass.time)})`;
+
+  if (currentClass) {
+    liveDiv.innerHTML = `Current class: <strong>${currentClass.subject}</strong><br>(${to12HourRange(
+      currentClass.time
+    )})`;
   } else {
     liveDiv.textContent = "No class running right now.";
   }
-  prevSpan.textContent = prevClass ? `${prevClass.subject} (${to12HourRange(prevClass.time)})` : "None";
-  currentSpan.textContent = currentClass ? `${currentClass.subject} (${to12HourRange(currentClass.time)})` : "No class running now";
-  nextSpan.textContent = nextClass ? `${nextClass.subject} (${to12HourRange(nextClass.time)})` : "No more classes today";
+
+  prevSpan.textContent = prevClass
+    ? `${prevClass.subject} (${to12HourRange(prevClass.time)})`
+    : "None";
+  currentSpan.textContent = currentClass
+    ? `${currentClass.subject} (${to12HourRange(currentClass.time)})`
+    : "No class running now";
+  nextSpan.textContent = nextClass
+    ? `${nextClass.subject} (${to12HourRange(nextClass.time)})`
+    : "No more classes today";
 }
 
 function renderDateTimeStylish() {
   const el = document.getElementById("dateTimeDisplay");
   if (!el) return;
   const now = new Date();
-  // Format: Wednesday, July 23, 2025 | 10:41 PM
-  const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-  let dateStr = now.toLocaleDateString(undefined, options);
-  let timeStr = now.toLocaleTimeString(undefined, {
-    hour: "2-digit", minute: "2-digit", hour12: true
+  const options = {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  };
+  const dateStr = now.toLocaleDateString(undefined, options);
+  const timeStr = now.toLocaleTimeString(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
   });
   el.textContent = `${dateStr} | ${timeStr}`;
 }
@@ -421,14 +466,17 @@ function renderAll() {
   renderDayTable();
   updateClassStatus();
 }
+
 function changeBatch(b) {
   currentBatch = b;
   renderAll();
 }
+
 function changeDay(d) {
   currentDay = d;
   renderAll();
 }
+
 window.changeBatch = changeBatch;
 window.changeDay = changeDay;
 
